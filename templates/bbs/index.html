@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>簡易掲示板</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+
+    <style>
+
+    img {
+        max-width:100%;
+    }
+
+
+    .image_input_area {
+        display:inline-block;
+        border:dashed 0.2rem var(--gray);
+        width:5rem;
+        height:5rem;
+
+        position:relative;
+        cursor:pointer;
+    }
+    .image_input{ display:none; }
+    .image_input_preview{ width:100%; height:100%;position:absolute; }
+    .image_input_icon{ width:100%; height:100%;position:absolute; }
+    .image_input_icon i{ 
+        font-size:2rem;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+    }
+    </style>
+
+
+</head>
+<body>
+
+    <main class="container">
+        {# ここが投稿用フォーム #}
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <textarea class="form-control" name="comment"></textarea>
+
+            <div id="image_input_areas">
+                <label class="image_input_area" data-id="1">
+                    <input class="image_input" type="file" name="content" accept="image/*">
+                    <div class="image_input_icon"><i class="fas fa-image"></i></div>
+                    <img class="image_input_preview" src="" alt="">
+                </label>
+            </div>
+
+
+            <input type="submit" value="送信">
+        </form>
+
+        <div id="image_input_area_init" style="display:none;">
+            <label class="image_input_area">
+                <input class="image_input" type="file" name="content" accept="image/*">
+                <div class="image_input_icon"><i class="fas fa-image"></i></div>
+                <img class="image_input_preview" src="" alt="">
+            </label>
+        </div>
+
+
+
+
+        {# ここが投稿されたデータの表示領域 #}
+        {% for topic in topics %}
+        <div class="border">
+            {{ topic.comment }}
+
+            {% for image in topic.images %}
+            <div>
+                <img src="{{ image.content.url }}" alt="">
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+    </main>
+
+<script>
+window.addEventListener("load" , function (){
+
+    document.addEventListener("change", (event) => {
+        // type="file"のinputタグがchengeした時。クラス名の中に image_input が含まれている場合。
+        if (event.target && event.target.classList.contains("image_input") ) {
+            image_input(event);
+        }
+    });
+
+
+});
+
+const image_input = (e) => {
+
+    // inputタグの親要素のlabelタグを取る
+    const label = e.target.closest(".image_input_area");
+
+    // https://qiita.com/noobar/items/afe7fc9994b448672c88
+    // labelタグの子要素のimgタグのsrc属性に、inputタグに指定された画像を当てる
+    if (e.target.files && e.target.files[0]) {
+        const reader    = new FileReader();
+        reader.onload   = function() {
+            label.querySelector(".image_input_preview").src = reader.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }   
+
+    // inputタグに指定した画像の表示
+    // 最後のinputタグに画像が指定された時、入力欄を一つ増やす
+    const areas = document.querySelector("#image_input_areas");
+
+    //  ↓ 入力欄の数を調べる                   入力があったlabelの番号を取得
+    if (String(areas.children.length) === label.getAttribute("data-id")){
+        const input_area_element    = document.querySelector("#image_input_area_init").children[0].cloneNode(true);
+        input_area_element.setAttribute("data-id", String(areas.children.length+1) );
+        areas.appendChild(input_area_element);
+    }   
+}
+</script>
+
+</body>
+</html>
